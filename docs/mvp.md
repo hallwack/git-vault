@@ -25,10 +25,10 @@ Create a functional CLI application.
 
 ### Tasks
 
-- [ ] Initialize Go module
-- [ ] Configure Cobra CLI
-- [ ] Implement root command
-- [ ] Implement version command
+- [x] Initialize Go module
+- [x] Configure Cobra CLI
+- [x] Implement root command
+- [x] Implement version command
 
 ---
 
@@ -40,10 +40,10 @@ Create and load project configuration.
 
 ### Tasks
 
-- [ ] Create `.gitvault.yaml`
-- [ ] Load configuration
-- [ ] Validate configuration
-- [ ] Save configuration
+- [x] Create `.gitvault.yaml`
+- [x] Load configuration
+- [x] Validate configuration
+- [x] Save configuration
 
 ---
 

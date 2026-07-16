@@ -9,31 +9,10 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"git-vault/internal/config"
+
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
-
-const configFileName = ".gitvault.yaml"
-
-// Config is the minimal shape of .gitvault.yaml for Stage 1/2.
-// This will move to internal/config once that package is built out
-// (see mvp.md Stage 2); init.go should then call config.Save(cfg)
-// instead of marshaling YAML directly.
-type Config struct {
-	Version  int    `yaml:"version"`
-	KDF      string `yaml:"kdf"`
-	Cipher   string `yaml:"cipher"`
-	SaltFile string `yaml:"salt_file"`
-}
-
-func defaultConfig() Config {
-	return Config{
-		Version:  1,
-		KDF:      "argon2id",
-		Cipher:   "aes-256-gcm",
-		SaltFile: ".gitvault.salt",
-	}
-}
 
 func NewInitCmd() *cobra.Command {
 	var force bool
@@ -57,22 +36,17 @@ func runInit(force bool) error {
 		return err
 	}
 
-	if _, err := os.Stat(configFileName); err == nil && !force {
-		return fmt.Errorf("%s already exists (use --force to overwrite)", configFileName)
+	if config.Exists() && !force {
+		return fmt.Errorf("%s already exists (use --force to overwrite)", config.FileName)
 	}
 
-	cfg := defaultConfig()
+	cfg := config.Default()
 
-	data, err := yaml.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to serialize config: %w", err)
+	if err := config.Save(cfg); err != nil {
+		return err
 	}
 
-	if err := os.WriteFile(configFileName, data, 0o600); err != nil {
-		return fmt.Errorf("failed to write %s: %w", configFileName, err)
-	}
-
-	fmt.Printf("Initialized Git Vault configuration: %s\n", configFileName)
+	fmt.Printf("Initialized Git Vault configuration: %s\n", config.FileName)
 	fmt.Println("Next: run 'git-vault unlock' to set a password")
 
 	return nil
