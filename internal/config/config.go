@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -20,8 +21,15 @@ type Config struct {
 
 // Supported algorithm values, checked by Validate.
 var (
-	supportedKDFs    = map[string]bool{"argon2id": true}
-	supportedCiphers = map[string]bool{"xchaxchacha20poly1305": true}
+	supportedKDFs = map[string]bool{
+		"argon2id": true,
+		"bcrypt":   true,
+	}
+	supportedCiphers = map[string]bool{
+		"xchaxchacha20poly1305": true,
+		"aes256gcm":             true,
+		"aes256ctr":             true,
+	}
 )
 
 // Default returns a Config populated with the values used at `init` time.
@@ -92,7 +100,12 @@ func (c Config) Validate() error {
 	}
 
 	if !supportedKDFs[c.KDF] {
-		return fmt.Errorf("unsupported kdf %q (supported: argon2id)", c.KDF)
+		var kdfs []string
+		for kdf := range supportedKDFs {
+			kdfs = append(kdfs, kdf)
+		}
+		supportedStr := strings.Join(kdfs, ", ")
+		return fmt.Errorf("unsupported kdf %q (supported: %v)", c.KDF, supportedStr)
 	}
 
 	if c.Cipher == "" {
@@ -100,7 +113,12 @@ func (c Config) Validate() error {
 	}
 
 	if !supportedCiphers[c.Cipher] {
-		fmt.Errorf("unsupported cipher %q (supported: xchaxchacha20poly1305)", c.Cipher)
+		var chipers []string
+		for chiper := range supportedCiphers {
+			chipers = append(chipers, chiper)
+		}
+		supportedStr := strings.Join(chipers, ", ")
+		return fmt.Errorf("unsupported cipher %q (supported: %v)", c.Cipher, supportedStr)
 	}
 
 	if c.SaltFile == "" {

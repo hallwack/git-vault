@@ -20,7 +20,8 @@ func NewInitCmd() *cobra.Command {
 	var initCmd = &cobra.Command{
 		Use:   "init",
 		Short: "Initialize a new Git Vault in the current repository",
-		Long:  "Creates a .gitvault.yaml configuration file in the current repository. If the file already exists, it will not be overwritten unless the --force flag is used.",
+		Long: `Creates a .gitvault.yaml configuration file in the current repository.
+		If the file already exists, it will not be overwritten unless the --force flag is used.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInit(force)
 		},

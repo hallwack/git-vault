@@ -1,39 +1,33 @@
 /*
 Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
 */
 package app
 
 import (
 	"fmt"
 
+	"git-vault/internal/session"
+
 	"github.com/spf13/cobra"
 )
 
-// lockCmd represents the lock command
-var lockCmd = &cobra.Command{
-	Use:   "lock",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+func NewLockCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "lock",
+		Short: "Lock the repository by clearing the cached master key",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if !session.IsActive() {
+				fmt.Println("Git Vault is already locked")
+				return nil
+			}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("lock called")
-	},
-}
+			if err := session.Clear(); err != nil {
+				return err
+			}
 
-func init() {
+			fmt.Println("Git Vault has been locked")
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// lockCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// lockCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+			return nil
+		},
+	}
 }

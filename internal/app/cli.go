@@ -28,9 +28,10 @@ func NewRootCmd() *cobra.Command {
 
 	rootCmd.AddCommand(NewInitCmd())
 	rootCmd.AddCommand(NewVersionCmd())
+	rootCmd.AddCommand(ValidateCmd())
+	rootCmd.AddCommand(NewUnlockCmd())
+	rootCmd.AddCommand(NewLockCmd())
 	// Next stages will add:
-	// rootCmd.AddCommand(NewUnlockCmd())
-	// rootCmd.AddCommand(NewLockCmd())
 	// rootCmd.AddCommand(NewCleanCmd())
 	// rootCmd.AddCommand(NewSmudgeCmd())
 
