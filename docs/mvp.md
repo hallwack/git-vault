@@ -55,10 +55,10 @@ Generate a master key from a password.
 
 ### Tasks
 
-- [ ] Prompt password
-- [ ] Confirm password
-- [ ] Generate random salt
-- [ ] Derive master key using Argon2id
+- [x] Prompt password
+- [x] Confirm password
+- [x] Generate random salt
+- [x] Derive master key using Argon2id
 
 ---
 
