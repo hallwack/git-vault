@@ -19,8 +19,24 @@ const (
 	threads = 4
 )
 
-// Prompt reads a password from the terminal without echoing it back to the screen.
+// envPasswordVar lets automation (scripts, CI, integration tests) supply a 
+// password without an interactive terminal. This mirrors the "headless mode"
+// planned for v0.6 in roadmap.md, introduced early here so Stage 8 can be 
+// tested without a real TTY.
+//
+// NOTE: env vars are visible to other processes on the same host (e.g. via 
+// /proc on Linux), so this is meant for testing/scripting convenience, not as
+// a secure secret-passing mechanism.
+const envPasswordVar = "GIT_VAULT_PASSWORD"
+
+// Prompt reads a password from stdin without echoing it to the terminal. If 
+// GIT_VAULT_PASSWORD is set, it is used instead and no terminal interaction
+// happens at all.
 func Prompt(label string) ([]byte, error) {
+	if password := os.Getenv(envPasswordVar); password != "" {
+		return []byte(password), nil
+	}
+
 	fmt.Fprint(os.Stderr, label)
 	password, err := term.ReadPassword(int(os.Stdin.Fd()))
 	fmt.Fprintln(os.Stderr)
@@ -37,6 +53,8 @@ func Prompt(label string) ([]byte, error) {
 
 // PromptWithConfirmation asks for a password twice and ensure the match.
 // Used the first time a repository is unlocked (no salt file yet).
+// When GIT_VAULT_PASSWORD is set, both reads resolve to the same value
+// automatically, so confirmation trivially passes.
 func PromptWithConfirmation() ([]byte, error) {
 	password, err := Prompt("Enter Password: ")
 	if err != nil {
