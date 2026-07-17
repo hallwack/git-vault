@@ -70,10 +70,10 @@ Encrypt and decrypt arbitrary data.
 
 ### Tasks
 
-- [ ] Generate nonce
-- [ ] Encrypt data
-- [ ] Decrypt data
-- [ ] Serialize encrypted payload
+- [x] Generate nonce
+- [x] Encrypt data
+- [x] Decrypt data
+- [x] Serialize encrypted payload
 
 ---
 
