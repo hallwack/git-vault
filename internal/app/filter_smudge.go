@@ -5,10 +5,11 @@ package app
 
 import (
 	"fmt"
-	"git-vault/internal/crypto"
-	"git-vault/internal/session"
 	"io"
 	"os"
+
+	"git-vault/internal/crypto"
+	"git-vault/internal/session"
 
 	"github.com/spf13/cobra"
 )

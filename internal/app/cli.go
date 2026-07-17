@@ -31,6 +31,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(ValidateCmd())
 	rootCmd.AddCommand(NewUnlockCmd())
 	rootCmd.AddCommand(NewLockCmd())
+	rootCmd.AddCommand(FilterCmd())
 	// Next stages will add:
 	// rootCmd.AddCommand(NewCleanCmd())
 	// rootCmd.AddCommand(NewSmudgeCmd())
