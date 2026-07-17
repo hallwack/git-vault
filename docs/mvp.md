@@ -85,10 +85,10 @@ Integrate Git clean/smudge filter.
 
 ### Tasks
 
-- [ ] Implement clean filter
-- [ ] Implement smudge filter
-- [ ] Read stdin
-- [ ] Write stdout
+- [x] Implement clean filter
+- [x] Implement smudge filter
+- [x] Read stdin
+- [x] Write stdout
 
 ---
 
@@ -100,9 +100,9 @@ Automatically configure Git.
 
 ### Tasks
 
-- [ ] Configure Git filter
-- [ ] Update `.gitattributes`
-- [ ] Validate repository
+- [x] Configure Git filter
+- [x] Update `.gitattributes`
+- [x] Validate repository
 
 ---
 
@@ -114,10 +114,10 @@ Prevent repeated password prompts.
 
 ### Tasks
 
-- [ ] Unlock session
-- [ ] Store master key
-- [ ] Retrieve master key
-- [ ] Lock session
+- [x] Unlock session
+- [x] Store master key
+- [x] Retrieve master key
+- [x] Lock session
 
 ---
 
@@ -129,12 +129,12 @@ Verify end-to-end workflow.
 
 ### Test Cases
 
-- [ ] Initialize repository
-- [ ] Unlock repository
-- [ ] Encrypt file
-- [ ] Commit
-- [ ] Checkout
-- [ ] Restore plaintext
+- [x] Initialize repository
+- [x] Unlock repository
+- [x] Encrypt file
+- [x] Commit
+- [x] Checkout
+- [x] Restore plaintext
 
 ---
 
