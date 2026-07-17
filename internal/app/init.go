@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"git-vault/internal/config"
+	gitpkg "git-vault/internal/git"
 
 	"github.com/spf13/cobra"
 )
@@ -18,12 +19,20 @@ func NewInitCmd() *cobra.Command {
 	var force bool
 
 	var initCmd = &cobra.Command{
-		Use:   "init",
-		Short: "Initialize a new Git Vault in the current repository",
-		Long: `Creates a .gitvault.yaml configuration file in the current repository.
+		Use:   "init [pattern]",
+		Short: "Initialize Git Vault in the current repository",
+		Long: `Creates a .gitvault.yaml configuration file in the current 
+		repository, registers the git-vault clean/smudge filter in this 
+		repository's Git config, and optionally adds a pattern to .gitattributes for
+		files that should be encrypted (e.g. "secrets/*.env").
 		If the file already exists, it will not be overwritten unless the --force flag is used.`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInit(force)
+			var pattern string
+			if len(args) == 1 {
+				pattern = args[0]
+			}
+			return runInit(force, pattern)
 		},
 	}
 
@@ -32,7 +41,7 @@ func NewInitCmd() *cobra.Command {
 	return initCmd
 }
 
-func runInit(force bool) error {
+func runInit(force bool, pattern string) error {
 	if err := ensureInsideGitRepo(); err != nil {
 		return err
 	}
@@ -42,12 +51,26 @@ func runInit(force bool) error {
 	}
 
 	cfg := config.Default()
-
 	if err := config.Save(cfg); err != nil {
 		return err
 	}
+	fmt.Printf("Created %s\n", config.FileName)
 
-	fmt.Printf("Initialized Git Vault configuration: %s\n", config.FileName)
+	if err := gitpkg.ConfigureFilter(); err != nil {
+		return err
+	}
+	fmt.Println("Registered git-vault clean/smudge filter in .git/config")
+
+	if pattern != "" {
+		if err := gitpkg.AddPattern(pattern); err != nil {
+			return err
+		}
+		fmt.Printf("Added %q to .gitattributes\n", pattern)
+	} else {
+		fmt.Println("No pattern given - add file patterns to .gitattributes manually, e.g.:")
+		fmt.Println("  secrets/*.env filter=git-vault")
+	}
+
 	fmt.Println("Next: run 'git-vault unlock' to set a password")
 
 	return nil
