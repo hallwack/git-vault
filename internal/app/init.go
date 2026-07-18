@@ -71,6 +71,11 @@ func runInit(force bool, patterns []string) error {
 	}
 	fmt.Println("Registered git-vault clean/smudge filter in .git/config")
 
+	if err := gitpkg.MarkBinary(cfg.SaltFile); err != nil {
+		return err
+	}
+	fmt.Printf("Marked %s as binary in .gitattributes\n", cfg.SaltFile)
+
 	if len(patterns) == 0 {
 		fmt.Println("No file patterns given - add file patterns later with 'git-vault track <pattern>'")
 	} else {

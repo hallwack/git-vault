@@ -10,6 +10,8 @@ import (
 
 const attributesFileName = ".gitattributes"
 
+// ValidateRepository checks that the current directory is inside a Git working
+// tree. Returns an error otherwise.
 func ValidateRepository() error {
 	out, err := exec.Command(
 		"git",
@@ -81,14 +83,38 @@ func AddPattern(pattern string) error {
 		return fmt.Errorf("pattern cannot be empty")
 	}
 
-	line := fmt.Sprintf("%s filter=git-vault", pattern)
+	return appendAttributeLine(fmt.Sprintf("%s filter=git-vault", pattern))
+}
 
+// MarkBinary marks a path in .gitattributes as binary, which tells Git not to
+// apply any line-ending normalization, diffing, or merging to it - equivalent
+// to "-text -diff -merge".
+//
+// This matters for files that are not human-readable text, like the random salt
+// file: without this, Git may silently "normalize" line endings inside the raw
+// bytes on checkout (especially with core.autocrlf enabled, common on Windows),
+// corrupting the salt without any error. A corrupted salt means Argon2id
+// derives a different key even from the correct password, and every
+// collaborator who clones the repository fresh would fail to unlock - while
+// whoever set it up originally would not notice, since their own working copy
+// was never re-checkout-out.
+func MarkBinary(path string) error {
+	if path == "" {
+		return fmt.Errorf("path cannot be empty")
+	}
+
+	return appendAttributeLine(fmt.Sprintf("%s binary", path))
+}
+
+// appendAttributeLine appends a single line to .gitattributes if it is not
+// already present, creating the file if needed.
+func appendAttributeLine(line string) error {
 	existing, err := os.ReadFile(attributesFileName)
 	if err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to read %s: %w", attributesFileName, err)
 	}
 
-	for _, l := range strings.Split(string(existing), "\n") {
+	for l := range strings.SplitSeq(string(existing), "\n") {
 		if strings.TrimSpace(l) == line {
 			return nil // already present, nothing to do
 		}
