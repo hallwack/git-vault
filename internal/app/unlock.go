@@ -146,8 +146,11 @@ func verifyMarker(cfg config.Config, key []byte) error {
 	}
 
 	plaintext, err := crypto.Decrypt(key, nonce, ciphertext)
-	if err != nil || string(plaintext) != markerPlaintext {
-		return fmt.Errorf("incorrect password")
+	if err != nil {
+		return fmt.Errorf("marker decrypt failed: %w", err) // TEMPORARY: verbose for debugging
+	}
+	if string(plaintext) != markerPlaintext {
+		return fmt.Errorf("marker mismatch: got %q, want %q", plaintext, markerPlaintext) // TEMPORARY
 	}
 
 	return nil

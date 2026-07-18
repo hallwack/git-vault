@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -188,6 +189,24 @@ func TestInstallAfterClone(t *testing.T) {
 	}
 	runGit(clone, "config", "user.email", "test@example.com")
 	runGit(clone, "config", "user.name", "Test User")
+
+	// --- Diagnostics: compare checked-out files byte-for-byte
+	// against the origin, to pinpoint exactly what (if anything)
+	// diverges during clone/checkout. ---
+	for _, fname := range []string{".gitvault.salt", ".gitvault.yaml"} {
+		originBytes, err := os.ReadFile(filepath.Join(origin, fname))
+		if err != nil {
+			t.Fatalf("failed to read origin %s: %v", fname, err)
+		}
+		cloneBytes, err := os.ReadFile(filepath.Join(clone, fname))
+		if err != nil {
+			t.Fatalf("failed to read cloned %s: %v", fname, err)
+		}
+		if !bytes.Equal(originBytes, cloneBytes) {
+			t.Fatalf("%s differs after clone!\n--- origin (%d bytes) ---\n%x\n--- clone (%d bytes) ---\n%x",
+				fname, len(originBytes), originBytes, len(cloneBytes), cloneBytes)
+		}
+	}
 
 	gitConfigPath := filepath.Join(clone, ".git", "config")
 
