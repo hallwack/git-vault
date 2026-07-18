@@ -168,7 +168,13 @@ func TestInstallAfterClone(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(origin, "secret.txt"), []byte(plaintext), 0o644); err != nil {
 		t.Fatalf("failed to write plaintext file: %v", err)
 	}
-	if out, err := runGit(origin, "add", "secret.txt"); err != nil {
+
+	// Everything needed by a collaborator must be committed:
+	// .gitvault.yaml, .gitattributes, and .gitvault.salt are all
+	// required, not just the encrypted file itself. The session
+	// file at .git/git-vault-session is correctly excluded — it's
+	// outside the working tree and never tracked.
+	if out, err := runGit(origin, "add", ".gitvault.yaml", ".gitattributes", ".gitvault.salt", "secret.txt"); err != nil {
 		t.Fatalf("git add failed: %v\n%s", err, out)
 	}
 	if out, err := runGit(origin, "commit", "-m", "add secret"); err != nil {
