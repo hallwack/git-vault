@@ -1,6 +1,6 @@
 # Git Vault — Panduan Pemakaian
 
-Git Vault adalah CLI yang mengenkripsi file secara transparan di dalam repository Git, menggunakan mekanisme clean/smudge filter bawaan Git. File tersimpan terenkripsi di Git object database (dan di remote seperti GitHub), tapi tetap terbaca normal (plaintext) di working tree lokal kamu, selama repository dalam status _unlocked_.
+Git Vault adalah CLI yang mengenkripsi file secara transparan di dalam repository Git, menggunakan mekanisme clean/smudge filter bawaan Git. File tersimpan terenkripsi di Git object database (dan di remote seperti GitHub), tapi tetap terbaca normal (plaintext) di working tree lokal kamu, selama repository dalam status *unlocked*.
 
 ## Instalasi
 
@@ -55,25 +55,15 @@ credentials.json filter=git-vault
 git-vault unlock
 ```
 
-Karena ini pertama kali, kamu akan diminta memasukkan password dua kali (konfirmasi). Dari password ini, Git Vault men-generate salt acak (disimpan di `.gitvault.salt`) dan menderivasi _master key_ menggunakan Argon2id. Key ini disimpan sementara di _session_ (`.git/git-vault-session`), sehingga kamu tidak perlu memasukkan password berulang kali untuk operasi Git berikutnya.
+Karena ini pertama kali, kamu akan diminta memasukkan password dua kali (konfirmasi). Dari password ini, Git Vault men-generate salt acak (disimpan di `.gitvault.salt`) dan menderivasi *master key* menggunakan Argon2id. Key ini disimpan sementara di *session* (`.git/git-vault-session`), sehingga kamu tidak perlu memasukkan password berulang kali untuk operasi Git berikutnya.
 
 **Penting:** simpan password ini baik-baik. Git Vault tidak menyimpan password dalam bentuk apa pun — kalau lupa, file yang sudah terenkripsi tidak bisa didekripsi lagi.
-
-## Bergabung dengan repository yang sudah ada (bukan yang pertama kali setup)
-
-Kalau kamu **bukan** orang pertama yang `init` repository ini (misal kamu clone repo yang sudah punya `.gitvault.yaml`), **jangan** jalankan `git-vault init` lagi. Sebagai gantinya:
-
-```bash
-git-vault install
-```
-
-Perbedaannya dengan `init`: `install` hanya mendaftarkan filter clean/smudge ke `.git/config` lokal, tidak membuat atau mengubah `.gitvault.yaml`, salt, maupun pattern — karena semua itu sudah ada dari hasil clone. Ini wajib dijalankan setiap kali kamu clone ulang repository di komputer baru, karena `.git/config` tidak pernah ikut ter-clone.
 
 ## Pemakaian sehari-hari
 
 ### Encrypt file (otomatis)
 
-Begitu repository _unlocked_, cukup pakai Git seperti biasa:
+Begitu repository *unlocked*, cukup pakai Git seperti biasa:
 
 ```bash
 echo "API_KEY=rahasia123" > secrets/.env
@@ -116,6 +106,17 @@ git-vault unlock
 
 Kali ini kamu cukup memasukkan password sekali (tanpa konfirmasi), karena salt sudah ada.
 
+### Menambah pattern file baru
+
+Kalau setelah `init` kamu sadar ada file/folder lain yang juga perlu dienkripsi, tidak perlu `init --force` (yang berisiko menimpa config yang sudah ada). Gunakan `track`:
+
+```bash
+git-vault track "config/credentials.json"
+git-vault track "secrets/*.env" "*.pem"   # bisa lebih dari satu sekaligus
+```
+
+Command ini menambahkan pattern ke `.gitvault.yaml` **dan** `.gitattributes` sekaligus, sehingga tetap konsisten. Pattern yang sudah pernah ditambahkan tidak akan diduplikasi kalau kamu jalankan `track` lagi dengan pattern yang sama.
+
 ## Cek versi
 
 ```bash
@@ -125,14 +126,15 @@ git-vault version -v       # detail: commit, build date, versi Go, platform
 
 ## Kolaborasi dengan tim
 
-**Penting:** konfigurasi filter (`filter.git-vault.*`) disimpan di `.git/config`, yang bersifat **murni lokal** dan **tidak pernah** ikut ter-commit atau ter-clone — beda dengan `.gitattributes` yang memang bagian dari working tree. Karena itu, setiap kolaborator yang clone repository wajib mendaftarkan ulang filter secara manual, tidak otomatis aktif hanya karena repository di-clone.
+**Penting:** konfigurasi filter (`filter.git-vault.*`) disimpan di `.git/config`, yang bersifat **murni lokal** dan **tidak pernah** ikut ter-commit atau ter-clone — beda dengan `.gitattributes` yang memang bagian dari working tree. Karena itu, ada dua jalur berbeda tergantung posisi kamu:
 
-Setiap kolaborator yang clone repository perlu:
+### Kamu orang pertama yang setup (sudah dilakukan di atas)
 
-1. Install `git-vault` di komputernya.
-2. Clone repository seperti biasa.
-3. Jalankan `git-vault install` — ini mendaftarkan filter clean/smudge ke `.git/config` lokal miliknya, **tanpa** membuat ulang `.gitvault.yaml` atau salt (keduanya sudah ada karena ikut ter-clone).
-4. `git-vault unlock` dengan password yang **sama persis** yang dipakai saat setup awal (password ini perlu dibagikan lewat kanal aman di luar Git — misal password manager tim, bukan lewat chat biasa).
+Cukup `git-vault init` + `git-vault unlock`, seperti langkah **Persiapan awal** di atas. Setelah itu, commit dan push `.gitvault.yaml`, `.gitattributes`, dan `.gitvault.salt` ke remote, supaya kolaborator lain bisa memakainya.
+
+### Kamu kolaborator yang clone repository yang sudah ada
+
+**Jangan** jalankan `git-vault init` — itu akan mencoba membuat ulang konfigurasi yang sudah ada. Sebagai gantinya, gunakan `git-vault install`:
 
 ```bash
 git clone <repo-url>
@@ -140,6 +142,10 @@ cd <repo>
 git-vault install
 git-vault unlock
 ```
+
+`git-vault install` hanya mendaftarkan filter clean/smudge ke `.git/config` lokal milikmu — **tidak** membuat atau mengubah `.gitvault.yaml`, salt, maupun pattern, karena semua itu sudah ikut ter-clone. Command ini wajib dijalankan setiap kali kamu clone ulang repository di komputer baru mana pun, karena `.git/config` memang tidak pernah ikut ter-clone.
+
+Setelah `install`, jalankan `git-vault unlock` dengan password yang **sama persis** dipakai saat setup awal — password ini perlu dibagikan lewat kanal aman di luar Git (misal password manager tim), bukan lewat chat biasa.
 
 > **Yang wajib ikut di-commit:** `.gitvault.yaml`, `.gitattributes`, dan `.gitvault.salt`. Salt **wajib** dibagikan (bukan opsional) — karena skema saat ini berbasis password bersama (Argon2id), password yang sama hanya akan menghasilkan master key yang sama kalau salt-nya juga identik. Kalau salt hilang atau setiap kolaborator punya salt sendiri-sendiri, password yang sama pun akan menghasilkan key berbeda, dan file yang sudah terenkripsi tidak akan bisa didekripsi siapa pun. **Yang tidak boleh ikut ter-track:** session file di `.git/git-vault-session`, karena memang berada di luar working tree dan bersifat sementara per komputer.
 
@@ -163,12 +169,21 @@ Repository dalam status locked. Jalankan `git-vault unlock` terlebih dahulu.
 Kemungkinan repository locked saat checkout terjadi, atau password yang dipakai `unlock` salah. Coba `git-vault lock` lalu `git-vault unlock` ulang dengan password yang benar.
 
 **Ingin melihat apakah filter sudah terpasang dengan benar**
-
 ```bash
 cat .git/config
 ```
-
 Cari section `[filter "git-vault"]` — harus ada `clean`, `smudge`, dan `required = true`.
+
+## Referensi command
+
+| Command | Kapan dipakai |
+|---|---|
+| `git-vault init [pattern...]` | Sekali saja, oleh orang pertama yang setup Git Vault di repository ini |
+| `git-vault install` | Setiap kali clone repository yang sudah pakai Git Vault (di komputer manapun) |
+| `git-vault unlock` | Awal sesi kerja, atau setelah `lock` — minta password, cache master key |
+| `git-vault lock` | Akhir sesi kerja, untuk menghapus master key dari cache |
+| `git-vault track <pattern...>` | Menambah pattern file baru yang perlu dienkripsi |
+| `git-vault version [-v]` | Cek versi binary yang terpasang |
 
 ## Batasan versi ini (MVP v0.1)
 
