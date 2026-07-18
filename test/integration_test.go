@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -135,5 +136,97 @@ func TestLockedRepositoryRefusesFilter(t *testing.T) {
 
 	if out, err := runGit(dir, "add", "secret.txt"); err == nil {
 		t.Fatalf("expected `git add` to fail while locked, but it succeeded:\n%s", out)
+	}
+}
+
+// TestInstallAfterClone verifies the fix for the collaboration gap:
+// .git/config is local and is never carried over by `git clone`, so
+// a fresh clone must NOT already have the git-vault filter
+// registered — and running `git-vault install` must register it
+// without touching .gitvault.yaml, the salt, or patterns, allowing
+// the clone to unlock and decrypt with the same shared password.
+func TestInstallAfterClone(t *testing.T) {
+	origin := t.TempDir()
+	const plaintext = "clone me please\n"
+	const password = "shared-team-password"
+	env := []string{"GIT_VAULT_PASSWORD=" + password}
+
+	// --- Set up the "origin" repository, as if by the first teammate ---
+	if out, err := runGit(origin, "init"); err != nil {
+		t.Fatalf("git init failed: %v\n%s", err, out)
+	}
+	runGit(origin, "config", "user.email", "test@example.com")
+	runGit(origin, "config", "user.name", "Test User")
+
+	if out, err := runGitVault(origin, nil, "init", "secret.txt"); err != nil {
+		t.Fatalf("git-vault init failed: %v\n%s", err, out)
+	}
+	if out, err := runGitVault(origin, env, "unlock"); err != nil {
+		t.Fatalf("git-vault unlock (origin) failed: %v\n%s", err, out)
+	}
+
+	if err := os.WriteFile(filepath.Join(origin, "secret.txt"), []byte(plaintext), 0o644); err != nil {
+		t.Fatalf("failed to write plaintext file: %v", err)
+	}
+	if out, err := runGit(origin, "add", "secret.txt"); err != nil {
+		t.Fatalf("git add failed: %v\n%s", err, out)
+	}
+	if out, err := runGit(origin, "commit", "-m", "add secret"); err != nil {
+		t.Fatalf("git commit failed: %v\n%s", err, out)
+	}
+
+	// --- Clone into a fresh directory, simulating a teammate's machine ---
+	clone := filepath.Join(t.TempDir(), "clone")
+	if out, err := exec.Command("git", "clone", origin, clone).CombinedOutput(); err != nil {
+		t.Fatalf("git clone failed: %v\n%s", err, out)
+	}
+	runGit(clone, "config", "user.email", "test@example.com")
+	runGit(clone, "config", "user.name", "Test User")
+
+	gitConfigPath := filepath.Join(clone, ".git", "config")
+
+	// --- Sanity check: prove the bug is real — the clone must NOT
+	// already have the filter registered, since .git/config is
+	// never carried over by `git clone`. ---
+	before, err := os.ReadFile(gitConfigPath)
+	if err != nil {
+		t.Fatalf("failed to read cloned .git/config: %v", err)
+	}
+	if strings.Contains(string(before), "git-vault") {
+		t.Fatal("expected cloned .git/config to NOT contain the git-vault filter before running install")
+	}
+
+	// --- The fix under test: `install` registers the filter locally ---
+	if out, err := runGitVault(clone, nil, "install"); err != nil {
+		t.Fatalf("git-vault install failed: %v\n%s", err, out)
+	}
+
+	after, err := os.ReadFile(gitConfigPath)
+	if err != nil {
+		t.Fatalf("failed to read .git/config after install: %v", err)
+	}
+	if !strings.Contains(string(after), "git-vault") {
+		t.Fatal("expected .git/config to contain the git-vault filter after running install")
+	}
+
+	// --- Unlock with the shared password and confirm decryption works ---
+	if out, err := runGitVault(clone, env, "unlock"); err != nil {
+		t.Fatalf("git-vault unlock (clone) failed: %v\n%s", err, out)
+	}
+
+	clonedSecretPath := filepath.Join(clone, "secret.txt")
+	if err := os.Remove(clonedSecretPath); err != nil {
+		t.Fatalf("failed to remove working tree file: %v", err)
+	}
+	if out, err := runGit(clone, "checkout", "--", "secret.txt"); err != nil {
+		t.Fatalf("git checkout failed: %v\n%s", err, out)
+	}
+
+	restored, err := os.ReadFile(clonedSecretPath)
+	if err != nil {
+		t.Fatalf("failed to read restored file: %v", err)
+	}
+	if string(restored) != plaintext {
+		t.Fatalf("restored content mismatch:\n  want: %q\n  got:  %q", plaintext, string(restored))
 	}
 }
