@@ -110,7 +110,7 @@ func createMarker(cfg *config.Config, key []byte) error {
 		return err
 	}
 
-	ciphertext, err := crypto.Encrypt([]byte(markerPlaintext), key, nonce)
+	ciphertext, err := crypto.Encrypt(key, nonce, []byte(markerPlaintext))
 	if err != nil {
 		return err
 	}
