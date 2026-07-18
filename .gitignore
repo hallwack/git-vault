@@ -33,3 +33,6 @@ go.work.sum
 
 # Nix direnv
 .direnv/
+
+# Build results
+git-vault
