@@ -5,9 +5,6 @@ package app
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
 
 	"git-vault/internal/config"
 	gitpkg "git-vault/internal/git"
@@ -19,38 +16,51 @@ func NewInitCmd() *cobra.Command {
 	var force bool
 
 	var initCmd = &cobra.Command{
-		Use:   "init [pattern]",
+		Use:   "init [pattern...]",
 		Short: "Initialize Git Vault in the current repository",
 		Long: `Creates a .gitvault.yaml configuration file in the current 
 		repository, registers the git-vault clean/smudge filter in this 
-		repository's Git config, and optionally adds a pattern to .gitattributes for
-		files that should be encrypted (e.g. "secrets/*.env").
-		If the file already exists, it will not be overwritten unless the --force flag is used.`,
-		Args: cobra.MaximumNArgs(1),
+		repository's Git config, and records any given file patterns in both
+		.gitvault.yaml and .gitattributes so file matching them are encrypted.
+
+		Examples:
+			git-vault init
+			git-vault init "secrets/*.env"
+			git-vault init "secrets/*.env" "credentials.json"
+		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var pattern string
-			if len(args) == 1 {
-				pattern = args[0]
-			}
-			return runInit(force, pattern)
+			return runInit(force, args)
 		},
 	}
 
-	initCmd.Flags().BoolVarP(&force, "force", "f", false, "overwrite existing configuration")
+	initCmd.Flags().BoolVarP(
+		&force,
+		"force",
+		"f",
+		false,
+		"overwrite existing configuration",
+	)
 
 	return initCmd
 }
 
-func runInit(force bool, pattern string) error {
-	if err := ensureInsideGitRepo(); err != nil {
+func runInit(force bool, patterns []string) error {
+	if err := gitpkg.ValidateRepository(); err != nil {
 		return err
 	}
 
 	if config.Exists() && !force {
-		return fmt.Errorf("%s already exists (use --force to overwrite)", config.FileName)
+		return fmt.Errorf(
+			"%s already exists (use --force to overwrite)",
+			config.FileName,
+		)
 	}
 
 	cfg := config.Default()
+	for _, p := range patterns {
+		cfg.AddPattern(p)
+	}
+
 	if err := config.Save(cfg); err != nil {
 		return err
 	}
@@ -61,41 +71,18 @@ func runInit(force bool, pattern string) error {
 	}
 	fmt.Println("Registered git-vault clean/smudge filter in .git/config")
 
-	if pattern != "" {
-		if err := gitpkg.AddPattern(pattern); err != nil {
-			return err
-		}
-		fmt.Printf("Added %q to .gitattributes\n", pattern)
+	if len(patterns) == 0 {
+		fmt.Println("No file patterns given - add file patterns later with 'git-vault track <pattern>'")
 	} else {
-		fmt.Println("No pattern given - add file patterns to .gitattributes manually, e.g.:")
-		fmt.Println("  secrets/*.env filter=git-vault")
+		for _, p := range patterns {
+			if err := gitpkg.AddPattern(p); err != nil {
+				return err
+			}
+			fmt.Printf("Tracking pattern: %s\n", p)
+		}
 	}
 
 	fmt.Println("Next: run 'git-vault unlock' to set a password")
 
 	return nil
-}
-
-func ensureInsideGitRepo() error {
-	out, err := exec.Command("git", "rev-parse", "--is-inside-work-tree").Output()
-	if err != nil {
-		return fmt.Errorf("not a git repository (or git is not installed)")
-	}
-
-	if string(out) == "" {
-		return fmt.Errorf("not a git repository")
-	}
-
-	toplevel, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	if err == nil {
-		root := string(toplevel)
-		root = root[:len(root)-1] // trim trailing newline
-		cwd, _ := os.Getwd()
-		if cwd != "" && root != "" && filepath.Clean(cwd) != filepath.Clean(root) {
-			fmt.Printf("Note: repository root is %s (config will be created here in %s)\n", root, cwd)
-		}
-	}
-
-	return nil
-
 }

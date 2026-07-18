@@ -33,6 +33,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewLockCmd())
 	rootCmd.AddCommand(FilterCmd())
 	rootCmd.AddCommand(InstallCmd())
+	rootCmd.AddCommand(TrackCmd())
 
 	return rootCmd
 }
