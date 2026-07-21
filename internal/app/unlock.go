@@ -4,7 +4,6 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package app
 
 import (
-	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -36,7 +35,7 @@ func NewUnlockCmd() *cobra.Command {
 func runUnlock() error {
 	cfg, err := config.Load()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// First unlock ever: no salt file yet, so generate lock and ask the user to
@@ -49,14 +48,14 @@ func runUnlock() error {
 		firstTime = true
 		salt, err = password.GenerateSalt()
 		if err != nil {
-			return nil
+			return err
 		}
 
 		if err := os.WriteFile(cfg.SaltFile, salt, 0o600); err != nil {
 			return fmt.Errorf("failed to write salt file: %v", err)
 		}
 	} else {
-		_, err := os.ReadFile(cfg.SaltFile)
+		salt, err = os.ReadFile(cfg.SaltFile)
 		if err != nil {
 			return fmt.Errorf("failed to read salt file: %v", err)
 		}
@@ -74,12 +73,6 @@ func runUnlock() error {
 	}
 
 	key := password.DeriveKey(pw, salt)
-
-	if os.Getenv("GIT_VAULT_DEBUG") != "" {
-		keyHash := sha256.Sum256(key)
-		fmt.Fprintf(os.Stderr, "[debug] pwLen=%d pw=%q saltLen=%d saltHex=%x keyHash=%x\n",
-			len(pw), pw, len(salt), salt, keyHash)
-	}
 
 	if firstTime {
 		// No marker yet - create one now so future unlocks can verify the password
@@ -117,7 +110,11 @@ func createMarker(cfg *config.Config, key []byte) error {
 		return err
 	}
 
-	ciphertext, err := crypto.Encrypt(key, nonce, []byte(markerPlaintext))
+	ciphertext, err := crypto.Encrypt(
+		key,
+		nonce,
+		[]byte(markerPlaintext),
+	)
 	if err != nil {
 		return err
 	}
@@ -144,7 +141,7 @@ func verifyMarker(cfg config.Config, key []byte) error {
 
 	payload, err := base64.StdEncoding.DecodeString(cfg.Marker)
 	if err != nil {
-		return fmt.Errorf("failed to decode marker: %v", err)
+		return fmt.Errorf("failed to decode marker: %w", err)
 	}
 
 	nonce, ciphertext, err := crypto.Deserialize(payload)
@@ -153,11 +150,8 @@ func verifyMarker(cfg config.Config, key []byte) error {
 	}
 
 	plaintext, err := crypto.Decrypt(key, nonce, ciphertext)
-	if err != nil {
-		return fmt.Errorf("marker decrypt failed: %w", err) // TEMPORARY: verbose for debugging
-	}
-	if string(plaintext) != markerPlaintext {
-		return fmt.Errorf("marker mismatch: got %q, want %q", plaintext, markerPlaintext) // TEMPORARY
+	if err != nil || string(plaintext) != markerPlaintext {
+		return fmt.Errorf("incorrect password (failed to decrypt marker)")
 	}
 
 	return nil
