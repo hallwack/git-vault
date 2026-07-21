@@ -4,6 +4,7 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package app
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -73,6 +74,12 @@ func runUnlock() error {
 	}
 
 	key := password.DeriveKey(pw, salt)
+
+	if os.Getenv("GIT_VAULT_DEBUG") != "" {
+		keyHash := sha256.Sum256(key)
+		fmt.Fprintf(os.Stderr, "[debug] pwLen=%d pw=%q saltLen=%d saltHex=%x keyHash=%x\n",
+			len(pw), pw, len(salt), salt, keyHash)
+	}
 
 	if firstTime {
 		// No marker yet - create one now so future unlocks can verify the password
