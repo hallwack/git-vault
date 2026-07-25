@@ -50,7 +50,7 @@ func Load() ([]byte, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("no actiove session; run 'git-vault unlock' first")
+			return nil, fmt.Errorf("no active session; run 'git-vault unlock' first")
 		}
 		return nil, fmt.Errorf("failed to read session file: %w", err)
 	}
