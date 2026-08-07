@@ -26,14 +26,15 @@ func NewRootCmd() *cobra.Command {
 		SilenceErrors: true,
 	}
 
-	rootCmd.AddCommand(NewInitCmd())
-	rootCmd.AddCommand(NewVersionCmd())
+	rootCmd.AddCommand(InitCmd())
+	rootCmd.AddCommand(VersionCmd())
 	rootCmd.AddCommand(ValidateCmd())
-	rootCmd.AddCommand(NewUnlockCmd())
-	rootCmd.AddCommand(NewLockCmd())
+	rootCmd.AddCommand(UnlockCmd())
+	rootCmd.AddCommand(LockCmd())
 	rootCmd.AddCommand(FilterCmd())
 	rootCmd.AddCommand(InstallCmd())
 	rootCmd.AddCommand(TrackCmd())
+	rootCmd.AddCommand(SyncCmd())
 
 	return rootCmd
 }

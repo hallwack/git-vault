@@ -22,7 +22,7 @@ import (
 // instead of only failing later when a real file fails to decrypt.
 const markerPlaintext = "git-vault-password-check"
 
-func NewUnlockCmd() *cobra.Command {
+func UnlockCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "unlock",
 		Short: "Unlock the repository by deriving and caching the master key",

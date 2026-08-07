@@ -16,7 +16,7 @@ var (
 	BuildDate = "unknown"
 )
 
-func NewVersionCmd() *cobra.Command {
+func VersionCmd() *cobra.Command {
 	var verbose bool
 
 	var versionCmd = &cobra.Command{

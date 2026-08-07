@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewInitCmd() *cobra.Command {
+func InitCmd() *cobra.Command {
 	var force bool
 
 	var initCmd = &cobra.Command{

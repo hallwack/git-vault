@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewLockCmd() *cobra.Command {
+func LockCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "lock",
 		Short: "Lock the repository by clearing the cached master key",
