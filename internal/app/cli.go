@@ -20,8 +20,8 @@ func NewRootCmd() *cobra.Command {
 		Use:   "git-vault",
 		Short: "Git Vault - transparent file encryption for Git",
 		Long: `Git Vault encrypts tracked files transparently using Git
-		clean/smudge filters, so secrets stay encrypted in the repository
-		and are only decrypted in your working tree.`,
+clean/smudge filters, so secrets stay encrypted in the repository
+and are only decrypted in your working tree.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}

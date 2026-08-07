@@ -21,13 +21,13 @@ func InstallCmd() *cobra.Command {
 		Use:   "install",
 		Short: "Register the git-vault filter in this clone's local Git config",
 		Long: `Run this once after cloning a repository that already uses
-			Git Vault. It reads the existing .gitvault.yaml (created by whoever
-			ran 'git-vault init') and registers the clean/smudge filter in
-			.git/config — which lives outside the working tree and is therefore
-			never included when the repository is cloned.
+Git Vault. It reads the existing .gitvault.yaml (created by whoever
+ran 'git-vault init') and registers the clean/smudge filter in
+.git/config — which lives outside the working tree and is therefore
+never included when the repository is cloned.
 
-			After running this, use 'git-vault unlock' with the shared password
-			to start working with encrypted files.`,
+After running this, use 'git-vault unlock' with the shared password
+to start working with encrypted files.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInstall()
 		},

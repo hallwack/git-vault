@@ -23,11 +23,11 @@ func SyncCmd() *cobra.Command {
 		Use:   "sync",
 		Short: "Reconcile .gitattributes with the patterns listed in .gitvault.yaml",
 		Long: `Reads the "patterns" list from .gitvault.yaml and ensures every one of
-		them has a matching "filter=git-vault" line in .gitattributes.
-		
-		Useful after manually editing .gitvault.yaml's patterns list, or to repair
-		.gitattributes if it was accidentally edited or deleted.
-		Existing lines are left untouched; nothing is removed.`,
+them has a matching "filter=git-vault" line in .gitattributes.
+
+Useful after manually editing .gitvault.yaml's patterns list, or to repair
+.gitattributes if it was accidentally edited or deleted.
+Existing lines are left untouched; nothing is removed.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSync()
 		},

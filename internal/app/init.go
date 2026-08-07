@@ -19,14 +19,14 @@ func InitCmd() *cobra.Command {
 		Use:   "init [pattern...]",
 		Short: "Initialize Git Vault in the current repository",
 		Long: `Creates a .gitvault.yaml configuration file in the current 
-		repository, registers the git-vault clean/smudge filter in this 
-		repository's Git config, and records any given file patterns in both
-		.gitvault.yaml and .gitattributes so file matching them are encrypted.
+repository, registers the git-vault clean/smudge filter in this 
+repository's Git config, and records any given file patterns in both
+.gitvault.yaml and .gitattributes so file matching them are encrypted.
 
-		Examples:
-			git-vault init
-			git-vault init "secrets/*.env"
-			git-vault init "secrets/*.env" "credentials.json"
+Examples:
+	git-vault init
+	git-vault init "secrets/*.env"
+	git-vault init "secrets/*.env" "credentials.json"
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInit(force, args)
