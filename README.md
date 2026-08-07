@@ -80,5 +80,4 @@ This is a v0.1 MVP. Notably:
 - No ready-made CI/CD integration, though the non-interactive unlock path it needs already exists (v0.6).
 
 ## License
-
-<!-- TODO: add a license before making this repository public -->
+MIT
